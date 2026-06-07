@@ -1,20 +1,22 @@
 from test_runner.device_interface import DeviceInterface
 
 
-# Mock serial device used for driver validation
+# Mock serial device used for driver validation.
 class FakeSerial(DeviceInterface):
 
-    # Initialize simulated GPIO state, mode, and pull
+    # Initialize simulated GPIO state, mode, pull, and interrupts.
     def __init__(self):
         self.gpio_states = {}
         self.gpio_modes = {}
         self.gpio_pulls = {}
+        self.gpio_interrupts = {}
+        self.pending_interrupts = []
 
-    # Open fake device connection
+    # Open fake device connection.
     def connect(self):
         pass
 
-    # Process commands and return simulated responses
+    # Process commands and return simulated responses.
     def send_command(self, command: str) -> str:
 
         parts = command.split()
@@ -22,6 +24,7 @@ class FakeSerial(DeviceInterface):
         if command == "PING":
             return "OK PONG"
 
+        # Configure GPIO mode.
         if len(parts) == 3 and parts[0] == "GPIO_CONFIG":
 
             pin = parts[1]
@@ -36,6 +39,7 @@ class FakeSerial(DeviceInterface):
 
             return f"OK GPIO_CONFIG {pin} {mode}"
 
+        # Configure GPIO pull resistor.
         if len(parts) == 3 and parts[0] == "GPIO_PULL":
 
             pin = parts[1]
@@ -60,6 +64,23 @@ class FakeSerial(DeviceInterface):
 
             return f"OK GPIO_PULL {pin} {pull}"
 
+        # Configure interrupt edge detection.
+        if len(parts) == 3 and parts[0] == "GPIO_INTERRUPT":
+
+            pin = parts[1]
+            edge = parts[2]
+
+            if pin not in self.gpio_modes:
+                return "ERROR PIN_NOT_CONFIGURED"
+
+            if edge not in ["RISING", "FALLING"]:
+                return "ERROR INVALID_EDGE"
+
+            self.gpio_interrupts[pin] = edge
+
+            return f"OK GPIO_INTERRUPT {pin} {edge}"
+
+        # Drive GPIO output.
         if len(parts) == 3 and parts[0] == "GPIO_WRITE":
 
             pin = parts[1]
@@ -78,6 +99,7 @@ class FakeSerial(DeviceInterface):
 
             return f"OK GPIO_WRITE {pin} {state}"
 
+        # Simulate external input signal.
         if len(parts) == 3 and parts[0] == "GPIO_SET_INPUT":
 
             pin = parts[1]
@@ -92,10 +114,31 @@ class FakeSerial(DeviceInterface):
             if state not in ["HIGH", "LOW"]:
                 return "ERROR INVALID_STATE"
 
+            previous_state = self.gpio_states[pin]
+
             self.gpio_states[pin] = state
+
+            if pin in self.gpio_interrupts:
+
+                edge = self.gpio_interrupts[pin]
+
+                if (
+                    edge == "RISING"
+                    and previous_state == "LOW"
+                    and state == "HIGH"
+                ):
+                    self.pending_interrupts.append(pin)
+
+                if (
+                    edge == "FALLING"
+                    and previous_state == "HIGH"
+                    and state == "LOW"
+                ):
+                    self.pending_interrupts.append(pin)
 
             return f"OK GPIO_SET_INPUT {pin} {state}"
 
+        # Read GPIO state.
         if len(parts) == 2 and parts[0] == "GPIO_READ":
 
             pin = parts[1]
@@ -107,8 +150,21 @@ class FakeSerial(DeviceInterface):
 
             return f"OK GPIO_READ {pin} {state}"
 
+        # Check interrupt status.
+        if len(parts) == 2 and parts[0] == "GPIO_INTERRUPT_STATUS":
+
+            pin = parts[1]
+
+            if pin in self.pending_interrupts:
+
+                self.pending_interrupts.remove(pin)
+
+                return f"OK GPIO_INTERRUPT {pin}"
+
+            return f"OK GPIO_NO_INTERRUPT {pin}"
+
         return "ERROR UNKNOWN_COMMAND"
 
-    # Close fake device connection
+    # Close fake device connection.
     def close(self):
         pass
