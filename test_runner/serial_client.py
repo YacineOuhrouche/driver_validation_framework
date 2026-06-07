@@ -1,11 +1,13 @@
 import os
 import serial
 from dotenv import load_dotenv
+from test_runner.device_interface import DeviceInterface
+
 
 
 load_dotenv()
 
-# provide comm with a serial device
+# provide comm with a real serial device
 class SerialClient:
     def __init__(self):
         self.port = os.getenv("SERIAL_PORT")

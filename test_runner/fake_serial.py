@@ -1,14 +1,15 @@
-#mock serial device used for testing eithout stm32 hw
-class FakeSerial:
-    def __init__(self):
-        self.last_command = ""
+from test_runner.device_interface import DeviceInterface
 
-    # store last command sent by the test
-    def write(self, data: bytes):
-        self.last_command = data.decode().strip()
+# Mock serial device used for testing
+class FakeSerial(DeviceInterface):
+    
+    # open a fake conn
+    def connect(self):
+        pass
 
-    # return a simulated device response
-    def readline(self) -> bytes:
+    # return simulated respinse
+    def send_command(self, command: str) -> str:
+
         responses = {
             "PING": "OK PONG",
             "GPIO_CONFIG PA5 OUTPUT": "OK GPIO_CONFIG PA5 OUTPUT",
@@ -17,9 +18,9 @@ class FakeSerial:
             "GPIO_READ PA5": "OK GPIO_READ PA5 LOW",
         }
 
-        response = responses.get(self.last_command, "ERROR UNKNOWN_COMMAND")
-        return f"{response}\n".encode()
+        
+        return responses.get(command,"ERROR UNKNOWN_COMMAND" )
 
-    # close mock connection
+    # close fake connection
     def close(self):
         pass
