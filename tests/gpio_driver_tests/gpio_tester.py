@@ -1,24 +1,30 @@
-
-
-#GPIO validation commands for a device
+# GPIO validation helper.
 class GPIODriverTester:
-   
-    # store device communication backend
+
+    # store device backend
     def __init__(self, device):
         self.device = device
 
-    # config a gpio pin as out
+    # configure GPIO output mode
     def configure_output(self, pin: str) -> str:
-        return self.device.send_command(f"GPIO_CONFIG {pin} OUTPUT")
+        return self.device.send_command(
+            f"GPIO_CONFIG {pin} OUTPUT"
+        )
 
-    # set gpio as high
+    # drive GPIO HIGH
     def write_high(self, pin: str) -> str:
-        return self.device.send_command(f"GPIO_WRITE {pin} HIGH")
+        return self.device.send_command(
+            f"GPIO_WRITE {pin} HIGH"
+        )
 
-    # idem for low
+    # drive GPIO LOW
     def write_low(self, pin: str) -> str:
-        return self.device.send_command(f"GPIO_WRITE {pin} LOW")
+        return self.device.send_command(
+            f"GPIO_WRITE {pin} LOW"
+        )
 
-    # read a gpio pin state
+    # read GPIO state
     def read(self, pin: str) -> str:
-        return self.device.send_command(f"GPIO_READ {pin}")
+        return self.device.send_command(
+            f"GPIO_READ {pin}"
+        )

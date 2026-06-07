@@ -1,26 +1,65 @@
 from test_runner.device_interface import DeviceInterface
 
-# Mock serial device used for testing
+
+# mock serial device 
 class FakeSerial(DeviceInterface):
-    
-    # open a fake conn
+
+    # initialize simulated GPIO states
+    def __init__(self):
+        self.gpio_states = {}
+
+    # open fake device connection
     def connect(self):
         pass
 
-    # return simulated respinse
+    # process commands and return simulated responses
     def send_command(self, command: str) -> str:
 
-        responses = {
-            "PING": "OK PONG",
-            "GPIO_CONFIG PA5 OUTPUT": "OK GPIO_CONFIG PA5 OUTPUT",
-            "GPIO_WRITE PA5 HIGH": "OK GPIO_WRITE PA5 HIGH",
-            "GPIO_WRITE PA5 LOW": "OK GPIO_WRITE PA5 LOW",
-            "GPIO_READ PA5": "OK GPIO_READ PA5 LOW",
-        }
+        parts = command.split()
 
-        
-        return responses.get(command,"ERROR UNKNOWN_COMMAND" )
+        if command == "PING":
+            return "OK PONG"
 
-    # close fake connection
+        if len(parts) == 3 and parts[0] == "GPIO_CONFIG":
+
+            pin = parts[1]
+            mode = parts[2]
+
+            if mode != "OUTPUT":
+                return "ERROR INVALID_MODE"
+
+            self.gpio_states[pin] = "LOW"
+
+            return f"OK GPIO_CONFIG {pin} OUTPUT"
+
+        if len(parts) == 3 and parts[0] == "GPIO_WRITE":
+
+            pin = parts[1]
+            state = parts[2]
+
+            if pin not in self.gpio_states:
+                return "ERROR PIN_NOT_CONFIGURED"
+
+            if state not in ["HIGH", "LOW"]:
+                return "ERROR INVALID_STATE"
+
+            self.gpio_states[pin] = state
+
+            return f"OK GPIO_WRITE {pin} {state}"
+
+        if len(parts) == 2 and parts[0] == "GPIO_READ":
+
+            pin = parts[1]
+
+            if pin not in self.gpio_states:
+                return "ERROR PIN_NOT_CONFIGURED"
+
+            state = self.gpio_states[pin]
+
+            return f"OK GPIO_READ {pin} {state}"
+
+        return "ERROR UNKNOWN_COMMAND"
+
+    # close connection
     def close(self):
         pass
