@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
+# provide comm with a serial device
 class SerialClient:
     def __init__(self):
         self.port = os.getenv("SERIAL_PORT")
@@ -13,6 +13,7 @@ class SerialClient:
         self.timeout = float(os.getenv("TIMEOUT", "2"))
         self.connection = None
 
+    # open the serial connection
     def connect(self):
         if not self.port:
             raise ValueError("SERIAL_PORT is missing in .env")
@@ -23,6 +24,7 @@ class SerialClient:
             timeout=self.timeout,
         )
 
+    # send a command and return the respoisne
     def send_command(self, command: str) -> str:
         if self.connection is None:
             raise RuntimeError("Serial connection is not open")
@@ -33,6 +35,7 @@ class SerialClient:
         response = self.connection.readline().decode().strip()
         return response
 
+    # close the serial connection
     def close(self):
         if self.connection:
             self.connection.close()
