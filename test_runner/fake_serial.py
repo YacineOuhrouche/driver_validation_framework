@@ -6,11 +6,19 @@ class FakeSerial(DeviceInterface):
 
     # Initialize simulated GPIO state, mode, pull, and interrupts.
     def __init__(self):
+        # gpio states
         self.gpio_states = {}
         self.gpio_modes = {}
         self.gpio_pulls = {}
         self.gpio_interrupts = {}
         self.pending_interrupts = []
+
+        # initialize simulated uart state
+        self.uart_config = {}
+        self.uart_tx_buffer = []
+        self.uart_rx_buffer = []
+
+
 
     # Open fake device connection.
     def connect(self):
@@ -149,6 +157,64 @@ class FakeSerial(DeviceInterface):
             state = self.gpio_states[pin]
 
             return f"OK GPIO_READ {pin} {state}"
+
+
+        # configure uart baud rate
+        if len(parts) == 3 and parts[0] == "UART_CONFIG":
+
+            uart = parts[1]
+            baud = parts[2]
+
+            if not baud.isdigit():
+                return "ERROR INVALID_BAUD"
+
+            self.uart_config[uart] = {
+                "baud": int(baud)
+            }
+
+            return f"OK UART_CONFIG {uart} {baud}"
+
+        # transmit uart data
+        if len(parts) >= 3 and parts[0] == "UART_TX":
+
+            uart = parts[1]
+            data = " ".join(parts[2:])
+
+            if uart not in self.uart_config:
+                return "ERROR UART_NOT_CONFIGURED"
+
+            self.uart_tx_buffer.append(data)
+
+            return f"OK UART_TX {uart} {data}"
+
+        # inject uart receive data
+        if len(parts) >= 3 and parts[0] == "UART_INJECT_RX":
+
+            uart = parts[1]
+            data = " ".join(parts[2:])
+
+            if uart not in self.uart_config:
+                return "ERROR UART_NOT_CONFIGURED"
+
+            self.uart_rx_buffer.append(data)
+
+            return f"OK UART_INJECT_RX {uart} {data}"
+
+        # read uart received data
+        if len(parts) == 2 and parts[0] == "UART_RX":
+
+            uart = parts[1]
+
+            if uart not in self.uart_config:
+                return "ERROR UART_NOT_CONFIGURED"
+
+            if not self.uart_rx_buffer:
+                return f"OK UART_RX_EMPTY {uart}"
+
+            data = self.uart_rx_buffer.pop(0)
+
+            return f"OK UART_RX {uart} {data}"
+
 
         # Check interrupt status.
         if len(parts) == 2 and parts[0] == "GPIO_INTERRUPT_STATUS":
