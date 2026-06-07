@@ -17,6 +17,7 @@ class FakeSerial(DeviceInterface):
         self.uart_config = {}
         self.uart_tx_buffer = []
         self.uart_rx_buffer = []
+        self.uart_rx_limit = 3
 
 
 
@@ -195,6 +196,9 @@ class FakeSerial(DeviceInterface):
 
             if uart not in self.uart_config:
                 return "ERROR UART_NOT_CONFIGURED"
+
+            if len(self.uart_rx_buffer) >= self.uart_rx_limit:
+                return f"ERROR UART_RX_OVERFLOW {uart}"
 
             self.uart_rx_buffer.append(data)
 
