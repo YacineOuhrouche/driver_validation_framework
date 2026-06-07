@@ -1,19 +1,20 @@
 from test_runner.device_interface import DeviceInterface
 
 
-# mock serial device 
+# Mock serial device used for driver validation
 class FakeSerial(DeviceInterface):
 
-    # initialize simulated GPIO state and mode
+    # Initialize simulated GPIO state, mode, and pull
     def __init__(self):
         self.gpio_states = {}
         self.gpio_modes = {}
+        self.gpio_pulls = {}
 
-    # open fake device connection
+    # Open fake device connection
     def connect(self):
         pass
 
-    # process commands and return simulated responses
+    # Process commands and return simulated responses
     def send_command(self, command: str) -> str:
 
         parts = command.split()
@@ -30,9 +31,34 @@ class FakeSerial(DeviceInterface):
                 return "ERROR INVALID_MODE"
 
             self.gpio_modes[pin] = mode
+            self.gpio_pulls[pin] = "NONE"
             self.gpio_states[pin] = "LOW"
 
             return f"OK GPIO_CONFIG {pin} {mode}"
+
+        if len(parts) == 3 and parts[0] == "GPIO_PULL":
+
+            pin = parts[1]
+            pull = parts[2]
+
+            if pin not in self.gpio_modes:
+                return "ERROR PIN_NOT_CONFIGURED"
+
+            if self.gpio_modes[pin] != "INPUT":
+                return "ERROR PIN_NOT_INPUT"
+
+            if pull not in ["UP", "DOWN", "NONE"]:
+                return "ERROR INVALID_PULL"
+
+            self.gpio_pulls[pin] = pull
+
+            if pull == "UP":
+                self.gpio_states[pin] = "HIGH"
+
+            if pull == "DOWN":
+                self.gpio_states[pin] = "LOW"
+
+            return f"OK GPIO_PULL {pin} {pull}"
 
         if len(parts) == 3 and parts[0] == "GPIO_WRITE":
 
@@ -83,6 +109,6 @@ class FakeSerial(DeviceInterface):
 
         return "ERROR UNKNOWN_COMMAND"
 
-    # close fake device connection
+    # Close fake device connection
     def close(self):
         pass

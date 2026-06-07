@@ -1,11 +1,11 @@
-# GPIO validation helper
+# GPIO validation helper.
 class GPIODriverTester:
 
-    # store device backend
+    # Store device backend
     def __init__(self, device):
         self.device = device
 
-    # configure GPIO output mode
+    # Configure GPIO output mode
     def configure_output(self, pin: str) -> str:
         return self.device.send_command(
             f"GPIO_CONFIG {pin} OUTPUT"
@@ -15,6 +15,24 @@ class GPIODriverTester:
     def configure_input(self, pin: str) -> str:
         return self.device.send_command(
             f"GPIO_CONFIG {pin} INPUT"
+        )
+
+    # Configure GPIO pull-up
+    def enable_pull_up(self, pin: str) -> str:
+        return self.device.send_command(
+            f"GPIO_PULL {pin} UP"
+        )
+
+    # Configure GPIO pull-down
+    def enable_pull_down(self, pin: str) -> str:
+        return self.device.send_command(
+            f"GPIO_PULL {pin} DOWN"
+        )
+
+    # Disable GPIO pull resistor
+    def disable_pull(self, pin: str) -> str:
+        return self.device.send_command(
+            f"GPIO_PULL {pin} NONE"
         )
 
     # Drive GPIO HIGH
