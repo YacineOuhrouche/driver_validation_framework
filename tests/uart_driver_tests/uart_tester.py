@@ -28,3 +28,15 @@ class UARTDriverTester:
         return self.device.send_command(
             f"UART_RX {uart}"
         )
+
+    # inject uart framing error
+    def inject_framing_error(self, uart: str) -> str:
+        return self.device.send_command(
+            f"UART_INJECT_FRAMING_ERROR {uart}"
+        )
+
+    # read uart error status
+    def error_status(self, uart: str) -> str:
+        return self.device.send_command(
+            f"UART_ERROR_STATUS {uart}"
+        )

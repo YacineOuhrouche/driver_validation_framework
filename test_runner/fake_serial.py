@@ -18,6 +18,7 @@ class FakeSerial(DeviceInterface):
         self.uart_tx_buffer = []
         self.uart_rx_buffer = []
         self.uart_rx_limit = 3
+        self.uart_errors = {}
 
 
 
@@ -232,6 +233,35 @@ class FakeSerial(DeviceInterface):
                 return f"OK GPIO_INTERRUPT {pin}"
 
             return f"OK GPIO_NO_INTERRUPT {pin}"
+
+                # inject uart framing error
+        if len(parts) == 2 and parts[0] == "UART_INJECT_FRAMING_ERROR":
+
+            uart = parts[1]
+
+            if uart not in self.uart_config:
+                return "ERROR UART_NOT_CONFIGURED"
+
+            self.uart_errors[uart] = "FRAMING"
+
+            return f"OK UART_INJECT_FRAMING_ERROR {uart}"
+
+        # read uart error status
+        if len(parts) == 2 and parts[0] == "UART_ERROR_STATUS":
+
+            uart = parts[1]
+
+            if uart not in self.uart_config:
+                return "ERROR UART_NOT_CONFIGURED"
+
+            error = self.uart_errors.get(uart)
+
+            if not error:
+                return f"OK UART_NO_ERROR {uart}"
+
+            self.uart_errors[uart] = None
+
+            return f"OK UART_ERROR {uart} {error}"
 
         return "ERROR UNKNOWN_COMMAND"
 
