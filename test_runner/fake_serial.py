@@ -20,7 +20,9 @@ class FakeSerial(DeviceInterface):
         self.uart_rx_limit = 3
         self.uart_errors = {}
 
-
+        # initialize simulated spi state
+        self.spi_config = {}
+        self.spi_devices = {}
 
     # Open fake device connection.
     def connect(self):
@@ -234,7 +236,7 @@ class FakeSerial(DeviceInterface):
 
             return f"OK GPIO_NO_INTERRUPT {pin}"
 
-                # inject uart framing error
+         # inject  uart framing error
         if len(parts) == 2 and parts[0] == "UART_INJECT_FRAMING_ERROR":
 
             uart = parts[1]
@@ -263,6 +265,65 @@ class FakeSerial(DeviceInterface):
 
             return f"OK UART_ERROR {uart} {error}"
 
+
+                # configure spi mode
+        if len(parts) == 5 and parts[0] == "SPI_CONFIG":
+
+            spi = parts[1]
+            role = parts[2]
+            cpol = parts[3]
+            cpha = parts[4]
+
+            if role not in ["MASTER", "SLAVE"]:
+                return "ERROR INVALID_SPI_ROLE"
+
+            if cpol not in ["0", "1"]:
+                return "ERROR INVALID_CPOL"
+
+            if cpha not in ["0", "1"]:
+                return "ERROR INVALID_CPHA"
+
+            self.spi_config[spi] = {
+                "role": role,
+                "cpol": cpol,
+                "cpha": cpha
+            }
+
+            return f"OK SPI_CONFIG {spi} {role} CPOL{cpol} CPHA{cpha}"
+
+        # attach simulated spi device
+        if len(parts) == 3 and parts[0] == "SPI_ATTACH_DEVICE":
+
+            spi = parts[1]
+            device_id = parts[2]
+
+            if spi not in self.spi_config:
+                return "ERROR SPI_NOT_CONFIGURED"
+
+            self.spi_devices[device_id] = {
+                "spi": spi
+            }
+
+            return f"OK SPI_ATTACH_DEVICE {spi} {device_id}"
+
+        # transfer spi data
+        if len(parts) >= 4 and parts[0] == "SPI_TRANSFER":
+
+            spi = parts[1]
+            device_id = parts[2]
+            data = " ".join(parts[3:])
+
+            if spi not in self.spi_config:
+                return "ERROR SPI_NOT_CONFIGURED"
+
+            if device_id not in self.spi_devices:
+                return "ERROR SPI_DEVICE_NOT_FOUND"
+
+            if self.spi_devices[device_id]["spi"] != spi:
+                return "ERROR SPI_DEVICE_BUS_MISMATCH"
+
+            return f"OK SPI_TRANSFER {spi} {device_id} {data}"
+            
         return "ERROR UNKNOWN_COMMAND"
 
     # Close fake device connection.
