@@ -1,10 +1,10 @@
-from automation.regression_runner import run_gpio_regression
+from automation.regression_runner import run_uart_regression
 
 
 # allow file to run directly
 if __name__ == "__main__":
 
-    code, stdout, stderr = run_gpio_regression()
+    code, stdout, stderr = run_uart_regression()
 
     print(stdout)
 
