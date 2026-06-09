@@ -24,6 +24,11 @@ class FakeSerial(DeviceInterface):
         self.spi_config = {}
         self.spi_devices = {}
 
+        # initialize simulated i2c state
+        self.i2c_config = {}
+        self.i2c_devices = {}
+        self.i2c_memory = {}
+
     # Open fake device connection.
     def connect(self):
         pass
@@ -323,6 +328,82 @@ class FakeSerial(DeviceInterface):
                 return "ERROR SPI_DEVICE_BUS_MISMATCH"
 
             return f"OK SPI_TRANSFER {spi} {device_id} {data}"
+            
+
+                # configure i2c bus
+        if len(parts) == 3 and parts[0] == "I2C_CONFIG":
+
+            bus = parts[1]
+            speed = parts[2]
+
+            if speed not in ["100000", "400000"]:
+                return "ERROR INVALID_I2C_SPEED"
+
+            self.i2c_config[bus] = {
+                "speed": speed
+            }
+
+            return f"OK I2C_CONFIG {bus} {speed}"
+
+        # attach simulated i2c device
+        if len(parts) == 3 and parts[0] == "I2C_ATTACH_DEVICE":
+
+            bus = parts[1]
+            address = parts[2]
+
+            if bus not in self.i2c_config:
+                return "ERROR I2C_NOT_CONFIGURED"
+
+            self.i2c_devices[address] = {
+                "bus": bus
+            }
+
+            self.i2c_memory[address] = []
+
+            return f"OK I2C_ATTACH_DEVICE {bus} {address}"
+
+        # write data to i2c device
+        if len(parts) >= 4 and parts[0] == "I2C_WRITE":
+
+            bus = parts[1]
+            address = parts[2]
+            data = " ".join(parts[3:])
+
+            if bus not in self.i2c_config:
+                return "ERROR I2C_NOT_CONFIGURED"
+
+            if address not in self.i2c_devices:
+                return "ERROR I2C_NACK"
+
+            if self.i2c_devices[address]["bus"] != bus:
+                return "ERROR I2C_BUS_MISMATCH"
+
+            self.i2c_memory[address].append(data)
+
+            return f"OK I2C_WRITE {bus} {address} {data}"
+
+        # read data from i2c device
+        if len(parts) == 3 and parts[0] == "I2C_READ":
+
+            bus = parts[1]
+            address = parts[2]
+
+            if bus not in self.i2c_config:
+                return "ERROR I2C_NOT_CONFIGURED"
+
+            if address not in self.i2c_devices:
+                return "ERROR I2C_NACK"
+
+            if self.i2c_devices[address]["bus"] != bus:
+                return "ERROR I2C_BUS_MISMATCH"
+
+            if not self.i2c_memory[address]:
+                return f"OK I2C_READ_EMPTY {bus} {address}"
+
+            data = self.i2c_memory[address].pop(0)
+
+            return f"OK I2C_READ {bus} {address} {data}"
+
             
         return "ERROR UNKNOWN_COMMAND"
 
