@@ -1,0 +1,14 @@
+from automation.regression_runner import run_i2c_regression
+
+
+# allow file to run directly
+if __name__ == "__main__":
+
+    code, stdout, stderr = run_i2c_regression()
+
+    print(stdout)
+
+    if stderr:
+        print(stderr)
+
+    raise SystemExit(code)

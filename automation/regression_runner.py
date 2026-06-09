@@ -29,3 +29,8 @@ def run_uart_regression():
 def run_spi_regression():
 
     return run_marked_regression("spi")
+
+# run i2c regression tests
+def run_i2c_regression():
+
+    return run_marked_regression("i2c")
