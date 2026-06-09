@@ -34,3 +34,8 @@ def run_spi_regression():
 def run_i2c_regression():
 
     return run_marked_regression("i2c")
+
+# run dma regression tests
+def run_dma_regression():
+
+    return run_marked_regression("dma")
