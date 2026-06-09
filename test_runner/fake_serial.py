@@ -28,6 +28,7 @@ class FakeSerial(DeviceInterface):
         self.i2c_config = {}
         self.i2c_devices = {}
         self.i2c_memory = {}
+        self.i2c_bus_stuck = {}
 
     # Open fake device connection.
     def connect(self):
@@ -404,7 +405,43 @@ class FakeSerial(DeviceInterface):
 
             return f"OK I2C_READ {bus} {address} {data}"
 
-            
+                # inject i2c stuck bus fault
+        if len(parts) == 2 and parts[0] == "I2C_INJECT_STUCK_BUS":
+
+            bus = parts[1]
+
+            if bus not in self.i2c_config:
+                return "ERROR I2C_NOT_CONFIGURED"
+
+            self.i2c_bus_stuck[bus] = True
+
+            return f"OK I2C_INJECT_STUCK_BUS {bus}"
+
+        # recover i2c bus
+        if len(parts) == 2 and parts[0] == "I2C_RECOVER_BUS":
+
+            bus = parts[1]
+
+            if bus not in self.i2c_config:
+                return "ERROR I2C_NOT_CONFIGURED"
+
+            self.i2c_bus_stuck[bus] = False
+
+            return f"OK I2C_RECOVER_BUS {bus}"
+
+        # read i2c bus status
+        if len(parts) == 2 and parts[0] == "I2C_BUS_STATUS":
+
+            bus = parts[1]
+
+            if bus not in self.i2c_config:
+                return "ERROR I2C_NOT_CONFIGURED"
+
+            if self.i2c_bus_stuck.get(bus):
+                return f"OK I2C_BUS_STUCK {bus}"
+
+            return f"OK I2C_BUS_READY {bus}"
+
         return "ERROR UNKNOWN_COMMAND"
 
     # Close fake device connection.

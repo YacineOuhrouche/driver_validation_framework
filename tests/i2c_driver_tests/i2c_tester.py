@@ -28,3 +28,21 @@ class I2CDriverTester:
         return self.device.send_command(
             f"I2C_READ {bus} {address}"
         )
+
+    # inject stuck bus fault
+    def inject_stuck_bus(self, bus: str) -> str:
+        return self.device.send_command(
+            f"I2C_INJECT_STUCK_BUS {bus}"
+        )
+
+    # recover i2c bus
+    def recover_bus(self, bus: str) -> str:
+        return self.device.send_command(
+            f"I2C_RECOVER_BUS {bus}"
+        )
+
+    # read i2c bus status
+    def bus_status(self, bus: str) -> str:
+        return self.device.send_command(
+            f"I2C_BUS_STATUS {bus}"
+        )
