@@ -496,7 +496,7 @@ class FakeSerial(DeviceInterface):
             channel = parts[1]
 
             if channel not in self.dma_transfers:
-                return "OK DMA_IDLE {channel}"
+                return f"OK DMA_IDLE {channel}"
 
             status = self.dma_transfers[channel]["status"]
 
