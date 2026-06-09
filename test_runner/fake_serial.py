@@ -30,6 +30,11 @@ class FakeSerial(DeviceInterface):
         self.i2c_memory = {}
         self.i2c_bus_stuck = {}
 
+        # initialize simulated dma state
+        self.dma_config = {}
+        self.dma_transfers = {}
+        self.dma_interrupts = []
+
     # Open fake device connection.
     def connect(self):
         pass
@@ -441,6 +446,74 @@ class FakeSerial(DeviceInterface):
                 return f"OK I2C_BUS_STUCK {bus}"
 
             return f"OK I2C_BUS_READY {bus}"
+
+
+                # configure dma channel
+        if len(parts) == 2 and parts[0] == "DMA_CONFIG":
+
+            channel = parts[1]
+
+            self.dma_config[channel] = {
+                "enabled": True
+            }
+
+            return f"OK DMA_CONFIG {channel}"
+
+        # start dma transfer
+        if len(parts) == 4 and parts[0] == "DMA_START":
+
+            channel = parts[1]
+            source = parts[2]
+            destination = parts[3]
+
+            if channel not in self.dma_config:
+                return "ERROR DMA_NOT_CONFIGURED"
+
+            self.dma_transfers[channel] = {
+                "source": source,
+                "destination": destination,
+                "status": "ACTIVE"
+            }
+
+            return f"OK DMA_START {channel} {source} {destination}"
+
+        # complete dma transfer
+        if len(parts) == 2 and parts[0] == "DMA_COMPLETE":
+
+            channel = parts[1]
+
+            if channel not in self.dma_transfers:
+                return "ERROR DMA_TRANSFER_NOT_ACTIVE"
+
+            self.dma_transfers[channel]["status"] = "COMPLETE"
+            self.dma_interrupts.append(channel)
+
+            return f"OK DMA_COMPLETE {channel}"
+
+        # read dma transfer status
+        if len(parts) == 2 and parts[0] == "DMA_STATUS":
+
+            channel = parts[1]
+
+            if channel not in self.dma_transfers:
+                return "OK DMA_IDLE {channel}"
+
+            status = self.dma_transfers[channel]["status"]
+
+            return f"OK DMA_STATUS {channel} {status}"
+
+        # read dma interrupt status
+        if len(parts) == 2 and parts[0] == "DMA_INTERRUPT_STATUS":
+
+            channel = parts[1]
+
+            if channel in self.dma_interrupts:
+
+                self.dma_interrupts.remove(channel)
+
+                return f"OK DMA_INTERRUPT {channel}"
+
+            return f"OK DMA_NO_INTERRUPT {channel}"
 
         return "ERROR UNKNOWN_COMMAND"
 
