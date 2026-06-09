@@ -25,14 +25,7 @@ def run_uart_regression():
     return run_marked_regression("uart")
 
 
-# allow file to run directly
-if __name__ == "__main__":
+# run spi regression tests
+def run_spi_regression():
 
-    code, stdout, stderr = run_uart_regression()
-
-    print(stdout)
-
-    if stderr:
-        print(stderr)
-
-    raise SystemExit(code)
+    return run_marked_regression("spi")
